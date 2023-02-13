@@ -23,14 +23,15 @@ contract SimpleExtension is ISlashCustomPlugin, Ownable {
 
   function checkRain(string memory original) public pure returns (bool) {
     uint length = bytes(original).length;
-    if (length >= 4) {
-      bytes memory substring = new bytes(4);
-      for (uint i = 0; i < 4; i++) {
-        substring[i] = bytes(original)[length - 4 + i];
-      }
-      if (keccak256(substring) == keccak256("rain")) {
+    uint offset = 0;
+    while (offset + 3 < length) {
+      if (bytes(original)[offset] == 'r' &&
+          bytes(original)[offset + 1] == 'a' &&
+          bytes(original)[offset + 2] == 'i' &&
+          bytes(original)[offset + 3] == 'n') {
         return true;
       }
+      offset += 1;
     }
     return false;
   }
