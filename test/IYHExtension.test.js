@@ -6,18 +6,17 @@ describe("test", () => {
     let buyer;
     let iYHExtension;
     let deployedOwner;
-    let UniversalERC20;
-    let universalERC20;
+    let erc20Demo;
     beforeEach(async () => {
         [owner, buyer] = await ethers.getSigners();
         const IYHExtension = await ethers.getContractFactory("IYHExtension");
         iYHExtension = await IYHExtension.deploy();
         deployedOwner = await iYHExtension.owner();
 
-        UniversalERC20 = await ethers.getContractFactory("contracts/v2/libs/UniversalERC20.sol:UniversalERC20");
-        universalERC20 = await UniversalERC20.deploy();
-        await universalERC20.deployed();
-        await universalERC20.universalTransfer(universalERC20, buyer, 100000);
+        const ERC20Demo = await ethers.getContractFactory("ERC20Demo");
+        erc20Demo = await ERC20Demo.deploy(100000);
+        await erc20Demo.deployed();
+        await erc20Demo.transfer(buyer.address, 100000);
     })
 
     it("owner should be equal deployed owner", () => {
@@ -31,13 +30,13 @@ describe("test", () => {
     })
 
     it("receivePayment1", async () => {
-        await iYHExtension.receivePayment(universalERC20.address, 1, "1", "1", "0x11");
+        await iYHExtension.receivePayment(erc20Demo.address, 1, "1", "1", "0x11");
         expect(Number(await iYHExtension.userTransactions(owner.address, 0))).to.equal(1);
         expect(Number(await iYHExtension.userAverage(owner.address))).to.equal(1);
     })
 
     it("receivePayment2", async () => {
-        await iYHExtension.receivePayment(universalERC20.address, 1, "1", "1", "0x11");
-        expect(Number(await universalERC20.universalBalanceOf(universalERC20.address, owner.address))).to.equal(1);
+        await iYHExtension.receivePayment(erc20Demo.address, 1, "1", "1", "0x11");
+        expect(Number(await erc20Demo.balanceOf(owner.address))).to.equal(1);
     })
 });
