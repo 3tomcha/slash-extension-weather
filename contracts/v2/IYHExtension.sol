@@ -2,14 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-import "./interfaces/ISlashCustomPlugin.sol";
 import "./libs/UniversalERC20.sol";
 
-contract IYHExtension is ISlashCustomPlugin, Ownable {
-    using UniversalERC20 for IERC20;
+contract IYHExtension is OwnableUpgradeable {
+    using UniversalERC20 for IERC20Upgradeable;
 
     mapping(address => uint256[]) public userTransactions;
     mapping(address => uint256) public userAverage;
@@ -38,18 +36,20 @@ contract IYHExtension is ISlashCustomPlugin, Ownable {
     }
 
     function receivePayment(
-        address receiveToken,
-        uint256 amount,
+        address receiveToken_,
+        uint256 amount_,
         string calldata /* paymentId */,
         string calldata /* optional */,
         bytes calldata /** reserved */
-    ) external payable override {
-        require(amount > 0, "invalid amount");
-        addTransaction(msg.sender, amount);
-        if (isTransactionAmountValid(msg.sender, amount)) {
-            emit IYH(msg.sender, userAverage[msg.sender], amount);
+    ) external payable {
+        require(amount_ > 0, "invalid amount");
+        addTransaction(msg.sender, amount_);
+        if (isTransactionAmountValid(msg.sender, amount_)) {
+            emit IYH(msg.sender, userAverage[msg.sender], amount_);
         }
-        IERC20(receiveToken).universalTransferFrom(msg.sender, owner(), amount);
+        IERC20Upgradeable(receiveToken_).universalTransferFromSenderToThis(
+            amount_
+        );
     }
 
     /**
@@ -62,7 +62,6 @@ contract IYHExtension is ISlashCustomPlugin, Ownable {
     function supportSlashExtensionInterface()
         external
         pure
-        override
         returns (uint8)
     {
         return 2;
