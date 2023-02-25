@@ -2,12 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
+import "./interfaces/ISlashCustomPlugin.sol";
 import "./libs/UniversalERC20.sol";
 
-contract IYHExtension is OwnableUpgradeable {
-    using UniversalERC20 for IERC20Upgradeable;
+contract IYHExtension is ISlashCustomPlugin, Ownable {
+    using UniversalERC20 for IERC20;
 
     mapping(address => uint256[]) public userTransactions;
     mapping(address => uint256) public userAverage;
@@ -47,9 +50,7 @@ contract IYHExtension is OwnableUpgradeable {
         if (isTransactionAmountValid(msg.sender, amount_)) {
             emit IYH(msg.sender, userAverage[msg.sender], amount_);
         }
-        IERC20Upgradeable(receiveToken_).universalTransferFromSenderToThis(
-            amount_
-        );
+        IERC20(receiveToken_).universalTransferFrom(msg.sender, owner(), amount_);
     }
 
     /**
