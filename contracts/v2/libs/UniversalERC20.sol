@@ -1,90 +1,80 @@
-// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-pragma solidity ^0.8.4;
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-
-// File: contracts/libs/UniversalERC20.sol
-/**
- * @notice Library for wrapping ERC20 token and ETH
- * @dev It uses msg.sender directly so only use in normal contract, not in GSN-like contract
- */
 library UniversalERC20 {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using AddressUpgradeable for address payable;
+    using Address for address payable;
+    using SafeERC20 for IERC20;
 
-    IERC20Upgradeable internal constant ZERO_ADDRESS =
-        IERC20Upgradeable(0x0000000000000000000000000000000000000000);
-    IERC20Upgradeable internal constant ETH_ADDRESS =
-        IERC20Upgradeable(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    IERC20 private constant ZERO_ADDRESS =
+        IERC20(0x0000000000000000000000000000000000000000);
+    IERC20 private constant ETH_ADDRESS =
+        IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     function universalTransfer(
-        IERC20Upgradeable token,
+        IERC20 token,
         address to,
         uint256 amount
-    ) internal returns (uint256) {
+    ) internal returns (bool) {
         if (amount == 0) {
-            return 0;
+            return true;
         }
 
         if (isETH(token)) {
             payable(address(uint160(to))).sendValue(amount);
-            return amount;
+            return true;
+        } else {
+            token.safeTransfer(to, amount);
+            return true;
         }
-        uint256 balanceBefore = token.balanceOf(to);
-        token.safeTransfer(to, amount);
-        return token.balanceOf(to) - balanceBefore;
     }
 
     function universalTransferFrom(
-        IERC20Upgradeable token,
+        IERC20 token,
         address from,
         address to,
         uint256 amount
-    ) internal returns (uint256) {
+    ) internal {
         if (amount == 0) {
-            return 0;
+            return;
         }
 
         if (isETH(token)) {
-            require(msg.value >= amount, "Insufficient msg.value");
-            if (to != address(this))
+            require(
+                from == msg.sender && msg.value >= amount,
+                "Wrong useage of ETH.universalTransferFrom()"
+            );
+            if (to != address(this)) {
                 payable(address(uint160(to))).sendValue(amount);
-
-            // refund redundant amount
-            if (msg.value > amount)
-                payable(address(uint160(from))).sendValue(msg.value - amount);
-
-            return amount;
+            }
+            if (msg.value > amount) {
+                payable(msg.sender).sendValue(msg.value - amount);
+            }
+        } else {
+            token.safeTransferFrom(from, to, amount);
         }
-        uint256 balanceBefore = token.balanceOf(to);
-        token.safeTransferFrom(from, to, amount);
-        return token.balanceOf(to) - balanceBefore;
     }
 
-    function universalTransferFromSenderToThis(
-        IERC20Upgradeable token,
-        uint256 amount
-    ) internal returns (uint256) {
+    function universalTransferFromSenderToThis(IERC20 token, uint256 amount)
+        internal
+    {
         if (amount == 0) {
-            return 0;
+            return;
         }
 
         if (isETH(token)) {
-            require(msg.value >= amount, "Insufficient msg.value");
-            // Return remainder if exist
-            if (msg.value > amount)
+            if (msg.value > amount) {
+                // Return remainder if exist
                 payable(msg.sender).sendValue(msg.value - amount);
-            return amount;
+            }
+        } else {
+            token.safeTransferFrom(msg.sender, address(this), amount);
         }
-        uint256 balanceBefore = token.balanceOf(address(this));
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        return token.balanceOf(address(this)) - balanceBefore;
     }
 
     function universalApprove(
-        IERC20Upgradeable token,
+        IERC20 token,
         address to,
         uint256 amount
     ) internal {
@@ -96,7 +86,7 @@ library UniversalERC20 {
         }
     }
 
-    function universalBalanceOf(IERC20Upgradeable token, address who)
+    function universalBalanceOf(IERC20 token, address who)
         internal
         view
         returns (uint256)
@@ -108,11 +98,7 @@ library UniversalERC20 {
         }
     }
 
-    function universalDecimals(IERC20Upgradeable token)
-        internal
-        view
-        returns (uint256)
-    {
+    function universalDecimals(IERC20 token) internal view returns (uint256) {
         if (isETH(token)) {
             return 18;
         }
@@ -129,7 +115,7 @@ library UniversalERC20 {
         return (success && data.length > 0) ? abi.decode(data, (uint256)) : 18;
     }
 
-    function isETH(IERC20Upgradeable token) internal pure returns (bool) {
+    function isETH(IERC20 token) internal pure returns (bool) {
         return (address(token) == address(ZERO_ADDRESS) ||
             address(token) == address(ETH_ADDRESS));
     }
