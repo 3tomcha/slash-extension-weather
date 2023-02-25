@@ -15,9 +15,14 @@ contract TransactionChecker {
     function addTransaction(address _user, uint256 _transactionAmount) public {
         userTransactions[_user].push(_transactionAmount);
         uint256 sum = 0;
-        for (uint256 i = 0; i < userTransactions[_user].length; i++) {
-            sum += userTransactions[_user][i];
+        uint256 transactionCount = userTransactions[_user].length;
+        if (transactionCount == 0) {
+            userAverage[_user] = _transactionAmount;
+        } else {
+            for (uint256 i = 0; i < transactionCount; i++) {
+                sum += userTransactions[_user][i];
+            }
+            userAverage[_user] = sum / transactionCount;
         }
-        userAverage[_user] = sum / userTransactions[_user].length;
     }
 }

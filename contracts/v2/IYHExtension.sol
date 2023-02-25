@@ -26,10 +26,15 @@ contract IYHExtension is ISlashCustomPlugin, Ownable {
     function addTransaction(address _user, uint256 _transactionAmount) public {
         userTransactions[_user].push(_transactionAmount);
         uint256 sum = 0;
-        for (uint256 i = 0; i < userTransactions[_user].length; i++) {
-            sum += userTransactions[_user][i];
+        uint256 transactionCount = userTransactions[_user].length;
+        if (transactionCount == 0) {
+            userAverage[_user] = _transactionAmount;
+        } else {
+            for (uint256 i = 0; i < transactionCount; i++) {
+                sum += userTransactions[_user][i];
+            }
+            userAverage[_user] = sum / transactionCount;
         }
-        userAverage[_user] = sum / userTransactions[_user].length;
     }
 
     function receivePayment(
@@ -40,12 +45,11 @@ contract IYHExtension is ISlashCustomPlugin, Ownable {
         bytes calldata /** reserved */
     ) external payable override {
         require(amount > 0, "invalid amount");
-        if (userTransactions[msg.sender].length > 0) {
-            if (isTransactionAmountValid(msg.sender, amount)) {
-                emit IYH(msg.sender, userAverage[msg.sender], amount);
-            }
-        }
         addTransaction(msg.sender, amount);
+        if (isTransactionAmountValid(msg.sender, amount)) {
+            emit IYH(msg.sender, userAverage[msg.sender], amount);
+        }
+        IERC20(receiveToken).universalTransferFrom(msg.sender, owner(), amount);
     }
 
     /**

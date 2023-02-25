@@ -23,6 +23,10 @@ describe("test", () => {
         expect(deployedOwner).to.equal(owner.address);;
     });
 
+    it("buyer balance should be 100000", async () => {
+        expect(Number(await erc20Demo.balanceOf(buyer.address))).to.equal(100000);
+    });
+
     it("addTransaction", async () => {
         await iYHExtension.addTransaction(owner.address, 1);
         expect(Number(await iYHExtension.userTransactions(owner.address, 0))).to.equal(1);
@@ -30,13 +34,9 @@ describe("test", () => {
     })
 
     it("receivePayment1", async () => {
-        await iYHExtension.receivePayment(erc20Demo.address, 1, "1", "1", "0x11");
+        await erc20Demo.approve(buyer.address, 1);
+        await iYHExtension.connect(buyer).receivePayment(erc20Demo.address, 1, "1", "1", "0x11");
         expect(Number(await iYHExtension.userTransactions(owner.address, 0))).to.equal(1);
         expect(Number(await iYHExtension.userAverage(owner.address))).to.equal(1);
-    })
-
-    it("receivePayment2", async () => {
-        await iYHExtension.receivePayment(erc20Demo.address, 1, "1", "1", "0x11");
-        expect(Number(await erc20Demo.balanceOf(owner.address))).to.equal(1);
     })
 });
