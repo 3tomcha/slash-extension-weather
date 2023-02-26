@@ -13,7 +13,7 @@ interface IERC721Demo {
     function mint(address to) external returns (uint256);
 }
 
-contract SimpleExtension is ISlashCustomPlugin, Ownable {
+contract BigWaveExtension is ISlashCustomPlugin, Ownable {
     using UniversalERC20 for IERC20;
     WeatherAPIConsumer public api;
 
