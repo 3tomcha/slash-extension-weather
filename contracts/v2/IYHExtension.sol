@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
 import "./interfaces/ISlashCustomPlugin.sol";
 import "./libs/UniversalERC20.sol";
-import "./IYHSBT.sol";
+import "./IYHToken.sol";
 
 contract IYHExtension is ISlashCustomPlugin, Ownable {
     using UniversalERC20 for IERC20;
@@ -50,8 +50,8 @@ contract IYHExtension is ISlashCustomPlugin, Ownable {
         addTransaction(msg.sender, amount_);
         if (isTransactionAmountValid(msg.sender, amount_)) {
             emit IYH(msg.sender, userAverage[msg.sender], amount_);
+            IYHToken(0xb25B88bA79d7257eE2CEca56873434949b04d88A).transfer(msg.sender, 1);
         }
-        IYHSBT(0x64E012c92BDA3e9528a9c4858D878aF490d32A69).mintNFT(msg.sender, "ipfs://Qme97gSuKjwSToTjZdhBQeQzmvwgzkw32RyqgnwRpsTPSh");
     }
 
     /**
